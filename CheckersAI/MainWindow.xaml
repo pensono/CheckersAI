@@ -1,13 +1,17 @@
-﻿<Window x:Class="Interface.MainWindow"
+﻿<Window x:Class="CheckersAI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CheckersAI"
         mc:Ignorable="d"
-        Title="MainWindow" d:DesignWidth="679.218" d:DesignHeight="753.539">
+        Title="MainWindow" d:DesignWidth="679.218" d:DesignHeight="753.539"
+        x:Name="Window">
     <DockPanel>
-        <Label DockPanel.Dock="Bottom" Content="{Binding Board.Turn, ElementName=Board, StringFormat=Current Turn: \{0:G\}}"/>
-        <local:CheckersBoardView x:Name="Board" Height="640" Width="640"></local:CheckersBoardView>
+        <StatusBar DockPanel.Dock="Bottom">
+            <TextBlock Text="{Binding Board.Turn, ElementName=Board, Mode=OneWay, StringFormat='Turn: {0:G}'}"></TextBlock>
+            <TextBlock Text="{Binding Board.Winner, ElementName=Board, Mode=OneWay, StringFormat='Winner: {0:G}'}"></TextBlock>
+        </StatusBar>
+        <local:CheckersBoardView x:Name="BoardComponent" Height="640" Width="640"></local:CheckersBoardView>
     </DockPanel>
 </Window>

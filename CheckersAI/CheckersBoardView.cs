@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -35,32 +36,24 @@ namespace CheckersAI {
             Board = CheckersBoard.GetInitialBoard();
         }
 
+        public event EventHandler<Square> OnSquareClicked;
+        protected virtual void OnRaiseSquareClicked(Square location) {
+            if (OnSquareClicked != null) {
+                OnSquareClicked(this, location);
+            }
+        }
+
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e) {
             base.OnMouseLeftButtonDown(e);
 
-            //if (Turn != Color.White) return;
-
             var position = e.GetPosition(this);
             int x = (int)(position.X / (RenderSize.Width / 8));
             int y = (int)(position.Y / (RenderSize.Height / 8));
-            if (CheckersBoard.IsValidLocation(x, y)) {
-                var selection = new Square(x, y);
-                if (SelectedSquare == null) {
-                    if (Board[selection].GetKind() == Board.Turn.AsKind())
-                        SelectedSquare = selection;
-                } else {
-                    var move = new Move(SelectedSquare, selection);
-                    if (Board.IsValidMove(move)) {
-                        Board = Board.ApplyMove(move);
-                        SelectedSquare = null;
-                    } else {
-                        if (Board[selection].GetKind() == Board.Turn.AsKind())
-                            SelectedSquare = selection;
-                    }
-                }
-            }
+            if (CheckersBoard.IsValidLocation(x, y))
+                OnRaiseSquareClicked(new Square(x, y));
         }
+
 
         protected override void OnRender(DrawingContext drawingContext) {
             base.OnRender(drawingContext);

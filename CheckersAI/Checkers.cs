@@ -11,12 +11,14 @@ namespace CheckersAI {
 
         private Square jumpingPiece;
 
+        private IEnumerable<Move> moves;
+
         public CheckersBoard() {
             board = new SquareState[32];
         }
 
         public CheckersBoard(CheckersBoard other) {
-            board = other.board;
+            board = (SquareState[])other.board.Clone();
             turn = other.turn;
         }
 
@@ -30,41 +32,51 @@ namespace CheckersAI {
             return (x + y) % 2 == 0;
         }
 
+        public Kind Winner {
+            get {
+                var kinds = board.Select(square => square.GetKind());
+                if (!kinds.Contains(Kind.Black)) return Kind.White;
+                if (!kinds.Contains(Kind.White)) return Kind.Black;
+                return Kind.None;
+            }
+        }
+
         public IEnumerable<Move> GetMoves() {
-            //TODO sort this out. Maybe refactor potential moves into the moves class?
+            if (moves != null) return moves;
 
             int direction = Turn.GetDirection();
 
             var values = new List<Move>();
 
             if (jumpingPiece != null) {
-                if (IsValidCoordinate(jumpingPiece.Y + direction)) {
-                    values.AddRange(GetPotentialJumps(jumpingPiece, direction));
+                if (IsValidCoordinate(jumpingPiece.Y + direction * 2)) {
+                    values.AddRange(GetJumps(jumpingPiece, direction));
                 }
 
                 if (this[jumpingPiece].IsKing()) {
-                    if (IsValidCoordinate(jumpingPiece.Y - direction)) {
-                        values.AddRange(GetPotentialJumps(jumpingPiece, -direction));
+                    if (IsValidCoordinate(jumpingPiece.Y - direction * 2)) {
+                        values.AddRange(GetJumps(jumpingPiece, -direction));
                     }
                 }
             }
 
             foreach (Square square in Square.BoardEnumerable()) {
                 if (this[square].GetKind() != Turn.AsKind()) continue;
+
                 if (IsValidCoordinate(square.Y + direction)) {
-                    values.AddRange(GetPotentialMoves(square, direction));
+                    values.AddRange(GetMoves(square, direction));
                     if (IsValidCoordinate(square.Y + direction * 2)) {
-                        values.AddRange(GetPotentialJumps(square, direction));
+                        values.AddRange(GetJumps(square, direction));
                     }
                 }
 
 
                 if (this[square].IsKing()) {
                     if (IsValidCoordinate(square.Y - direction)) {
-                        values.AddRange(GetPotentialMoves(square, -direction));
+                        values.AddRange(GetMoves(square, -direction));
 
                         if (IsValidCoordinate(square.Y - direction * 2)) {
-                            values.AddRange(GetPotentialJumps(square, -direction));
+                            values.AddRange(GetJumps(square, -direction));
                         }
                     }
                 }
@@ -72,6 +84,8 @@ namespace CheckersAI {
 
             if (values.Any(move => move.IsJump))
                 values = values.Where(move => move.IsJump).ToList();
+
+            moves = values;
             return values;
         }
 
@@ -79,7 +93,7 @@ namespace CheckersAI {
             return c < 8 && c >= 0;
         }
 
-        private IEnumerable<Move> GetPotentialMoves(Square start, int direction) {
+        private IEnumerable<Move> GetMoves(Square start, int direction) {
             int spaces = 1;
             if (start.X - spaces >= 0) {
                 var test = new Move(start, -spaces, direction * spaces);
@@ -91,21 +105,24 @@ namespace CheckersAI {
             }
         }
 
-        private IEnumerable<Move> GetPotentialJumps(Square start, int direction) {
+        private IEnumerable<Move> GetJumps(Square start, int direction) {
             int spaces = 2;
             if (start.X - spaces >= 0) {
                 var test = new Move(start, -spaces, direction * spaces);
-                if (IsValidMove(test) && IsValidJump(test)) yield return test;
+                if (IsValidJump(test)) yield return test;
             }
             if (start.X + spaces < 8) {
                 var test = new Move(start, spaces, direction * spaces);
-                if (IsValidMove(test) && IsValidJump(test)) yield return test;
+                if (IsValidJump(test)) yield return test;
             }
         }
 
         public bool IsValidMove(Move move) {
             //TODO clean this ship uppp
-            if (this[move.End] == SquareState.None) {
+            if (this[move.End] == SquareState.None &&
+                Math.Abs(move.End.X - move.Start.X) == 1 &&
+                (move.End.Y - move.Start.Y == Turn.GetDirection() ||
+                (this[move.Start].IsKing() && move.End.Y - move.Start.Y == -Turn.GetDirection()))) {
                 return true;
             }
             return false;
@@ -113,7 +130,11 @@ namespace CheckersAI {
 
         public bool IsValidJump(Move move) {
             //TODO clean this ship uppp
-            if (this[move.JumpedSquare].GetKind() == Turn.GetOther().AsKind()) {
+            if (this[move.End] == SquareState.None &&
+                Math.Abs(move.End.X - move.Start.X) == 2 &&
+                (move.End.Y - move.Start.Y == Turn.GetDirection() * 2 ||
+                (this[move.Start].IsKing() && move.End.Y - move.Start.Y == -Turn.GetDirection() * 2)) &&
+                this[move.JumpedSquare].GetKind() == Turn.GetOther().AsKind()) {
                 return true;
             }
             return false;
@@ -147,28 +168,27 @@ namespace CheckersAI {
 
         private bool CanJump(Square square) {
             //TODO Clean dis plz
-           int direction = Turn.GetDirection();
+            int direction = Turn.GetDirection();
 
             if (IsValidCoordinate(square.Y + direction * 2)) {
                 if (square.X - 2 >= 0) {
                     var test = new Move(square, -2, direction * 2);
-                    if (IsValidMove(test) && IsValidJump(test)) return true;
+                    if (IsValidJump(test)) return true;
                 }
                 if (square.X + 2 < 8) {
                     var test = new Move(square, 2, direction * 2);
-                    if (IsValidMove(test) && IsValidJump(test)) return true;
+                    if (IsValidJump(test)) return true;
                 }
             }
             if (this[square].IsKing()) {
-                direction = -direction;
                 if (IsValidCoordinate(square.Y - direction * 2)) {
                     if (square.X - 2 >= 0) {
                         var test = new Move(square, -2, -direction * 2);
-                        if (IsValidMove(test) && IsValidJump(test)) return true;
+                        if (IsValidJump(test)) return true;
                     }
                     if (square.X + 2 < 8) {
                         var test = new Move(square, 2, -direction * 2);
-                        if (IsValidMove(test) && IsValidJump(test)) return true;
+                        if (IsValidJump(test)) return true;
                     }
                 }
             }
@@ -224,6 +244,13 @@ namespace CheckersAI {
         public override string ToString() {
             return Start + " -> " + End;
         }
+
+        public override bool Equals(object obj) {
+            if (obj.GetType() != typeof(Move)) return false;
+
+            Move other = (Move)obj;
+            return other.Start.Equals(Start) && other.End.Equals(End);
+        }
     }
 
     public class Square {
@@ -237,9 +264,9 @@ namespace CheckersAI {
         }
 
         public Square(int x, int y) {
-            if (!CheckersBoard.IsValidLocation(x, y)) throw new ArgumentException("Invalid location: " + x + ", " + y);
             X = x;
             Y = y;
+            if (!CheckersBoard.IsValidLocation(x, y)) throw new ArgumentException("Invalid location: " + x + ", " + y);
         }
 
         public override string ToString() {
@@ -255,6 +282,13 @@ namespace CheckersAI {
                 }
             }
             yield break;
+        }
+
+        public override bool Equals(object obj) {
+            if (obj.GetType() != typeof(Square)) return false;
+
+            Square other = (Square)obj;
+            return other.X == X && other.Y == Y;
         }
     }
 
@@ -296,7 +330,9 @@ namespace CheckersAI {
         public static SquareState AsKing(this SquareState state) {
             switch (state) {
                 case SquareState.Black: return SquareState.BlackKing;
+                case SquareState.BlackKing: return SquareState.BlackKing;
                 case SquareState.White: return SquareState.WhiteKing;
+                case SquareState.WhiteKing: return SquareState.WhiteKing;
             }
             throw new ArgumentException("Invalid square state when trying to crown it: " + state);
         }
