@@ -5,12 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CheckersAI"
         mc:Ignorable="d"
-        Title="MainWindow" d:DesignWidth="679.218" d:DesignHeight="753.539"
-        x:Name="Window">
+        Title="Steven"
+        Width="740"
+        Height="740">
     <DockPanel>
         <StatusBar DockPanel.Dock="Bottom">
-            <TextBlock Text="{Binding Board.Turn, ElementName=Board, Mode=OneWay, StringFormat='Turn: {0:G}'}"></TextBlock>
-            <TextBlock Text="{Binding Board.Winner, ElementName=Board, Mode=OneWay, StringFormat='Winner: {0:G}'}"></TextBlock>
+            <TextBlock Text="{Binding Board.Turn, ElementName=BoardComponent, Mode=OneWay, StringFormat='Turn: {0:G}'}"></TextBlock>
+            <TextBlock Text="{Binding Board.Winner, ElementName=BoardComponent, Mode=OneWay, StringFormat='Winner: {0:G}'}"></TextBlock>
         </StatusBar>
         <local:CheckersBoardView x:Name="BoardComponent" Height="640" Width="640"></local:CheckersBoardView>
     </DockPanel>

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -7,8 +9,8 @@ using System.Windows.Media;
 
 namespace CheckersAI {
     public class CheckersBoardView : Control, INotifyPropertyChanged {
-
-        private CheckersBoard board;
+        //Properties
+        private CheckersBoard board = CheckersBoard.GetInitialBoard();
         public CheckersBoard Board {
             get { return board; }
             set {
@@ -28,12 +30,18 @@ namespace CheckersAI {
             }
         }
 
-        static CheckersBoardView() {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(CheckersBoardView), new FrameworkPropertyMetadata(typeof(CheckersBoardView)));
+        private IEnumerable<Move> displayedMoves = Enumerable.Empty<Move>();
+        public IEnumerable<Move> DisplayedMoves {
+            get { return displayedMoves; }
+            set {
+                displayedMoves = value;
+                NotifyPropertyChanged("DisplayedMoves");
+                InvalidateVisual();
+            }
         }
 
-        public CheckersBoardView() {
-            Board = CheckersBoard.GetInitialBoard();
+        static CheckersBoardView() {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(CheckersBoardView), new FrameworkPropertyMetadata(typeof(CheckersBoardView)));
         }
 
         public event EventHandler<Square> OnSquareClicked;
@@ -110,8 +118,7 @@ namespace CheckersAI {
 
             var movePen = new Pen(Brushes.LightBlue, 3);
             //Draw possible moves
-            var moves = Board.GetMoves();
-            foreach (var move in moves) {
+            foreach (var move in DisplayedMoves) {
                 var dest = CenterPoint(move.End, rectangleWidth, rectangleHeight);
                 drawingContext.DrawLine(movePen, CenterPoint(move.Start, rectangleWidth, rectangleHeight), dest);
                 drawingContext.DrawEllipse(Brushes.LightBlue, movePen, dest, rectangleWidth * .1, rectangleHeight * .1);

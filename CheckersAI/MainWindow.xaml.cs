@@ -12,6 +12,8 @@ namespace CheckersAI {
 
             BoardComponent.PropertyChanged += Board_PropertyChanged;
             BoardComponent.OnSquareClicked += BoardComponent_OnSquareClicked;
+
+            BoardComponent.Board = CheckersBoard.GetInitialBoard();
         }
 
         private void BoardComponent_OnSquareClicked(object sender, Square square) {
@@ -35,11 +37,14 @@ namespace CheckersAI {
         private void Board_PropertyChanged(object sender, PropertyChangedEventArgs e) {
             if (e.PropertyName == "Board") {
                 if (BoardComponent.Board.Turn == Color.Black) {
+                    BoardComponent.DisplayedMoves = Enumerable.Empty<Move>();
                     //Simulate
                     var simulationThread = new BackgroundWorker();
                     simulationThread.DoWork += CalculateComputerMove;
                     simulationThread.RunWorkerCompleted += PublishComputerMove;
                     simulationThread.RunWorkerAsync();
+                } else {
+                    BoardComponent.DisplayedMoves = BoardComponent.Board.GetMoves();
                 }
             }
         }
